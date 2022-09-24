@@ -24,6 +24,7 @@ export class AppComponent implements OnInit {
   readonly DataState = DataState;
   readonly Status = Status;
   private filterSubject = new BehaviorSubject<string>('');
+  private dataSubject = new BehaviorSubject<CustomResponse>(null);
   filterStatus$ = this.filterSubject.asObservable();
 
   constructor(private serverService: ServerService) {}
@@ -31,6 +32,8 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.appState$ = this.serverService.servers$.pipe(
       map((response) => {
+        this.dataSubject.next(response);
+        //data for front end
         return { dataState: DataState.LOADED_STATE, appData: response };
       }),
       //the return refers to http request => take some time => meanwhile display LOADING_STATE
@@ -38,6 +41,28 @@ export class AppComponent implements OnInit {
       startWith({ dataState: DataState.LOADING_STATE }),
       catchError((error: string) => {
         //error: error <=> error in js
+        return of({ dataState: DataState.ERROR_STATE, error });
+      })
+    );
+  }
+
+  pingServer(ipAddress: string): void {
+    this.filterSubject.next(ipAddress);
+    this.appState$ = this.serverService.ping$(ipAddress).pipe(
+      map((response) => {
+        const index = this.dataSubject.value.data.servers.findIndex(
+          (server) => server.id === response.data.server.id
+        );
+        this.dataSubject.value.data.servers[index] = response.data.server;
+        this.filterSubject.next(''); //stop the spinner
+        return { dataState: DataState.LOADED_STATE, appData: response };
+      }),
+      startWith({
+        dataState: DataState.LOADED_STATE,
+        appData: this.dataSubject.value,
+      }),
+      catchError((error: string) => {
+        this.filterSubject.next('');
         return of({ dataState: DataState.ERROR_STATE, error });
       })
     );
