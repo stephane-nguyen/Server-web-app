@@ -1,4 +1,5 @@
 <!-- display data in appState$ with async pipe in json type-->
+<!-- access to the observable: call it with $ then async to subscribe to it-->
 <!-- <div>{{ appState$ | async | json }}</div> -->
 <div class="container-xl">
   <div class="table-responsive">
@@ -9,7 +10,7 @@
             <h2>Manage Servers</h2>
           </div>
           <div class="col-sm-6">
-            <button type="button" class="btn btn-primary">Print Report</button>
+            <button type="button" (click)="printReport()" class="btn btn-primary">Print Report</button>
 
             <a
               href="#addEmployeeModal"
@@ -21,7 +22,8 @@
             </a>
 
             <span>
-              <select
+              <select (ngModelChange)="filterServers($event)" ngModel="ALL"
+
                 name="status"
                 class="btn btn-info"
                 style="height: 32.91px"
@@ -113,7 +115,7 @@
                   </a>
                 </td>
                 <td>
-                  <a class="delete" data-toggle="modal" style="cursor: pointer"
+                  <a (click)="deleteServer(server)" class="delete" data-toggle="modal" style="cursor: pointer"
                     ><i
                       class="material-icons"
                       data-toggle="tooltip"
@@ -140,7 +142,7 @@
 <div id="addEmployeeModal" class="modal fade">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form>
+      <form #serverForm="ngForm" (ngSubmit)="saveServer(serverForm)">
         <div class="modal-header">
           <h4 class="modal-title">Add Server</h4>
           <button
@@ -222,10 +224,10 @@
           >
             Cancel
           </button>
-          <button type="submit" class="btn btn-success">
-            <i></i>
-            <span>Saving...</span>
-            <span>Add</span>
+          <button type="submit" [disabled]="serverForm.invalid || (isLoading$ | async)" class="btn btn-success">
+            <i *ngIf="isLoading$ | async" class="fas fa-spinner fa-spin"></i>
+            <span *ngIf="isLoading$ |async">Saving...</span>
+            <span *ngIf="!(isLoading$ |async)">Add</span>
           </button>
         </div>
       </form>
